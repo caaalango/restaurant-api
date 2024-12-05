@@ -24,22 +24,6 @@ func (h HealthController) SetUpRoutes(c *gin.Engine) {
 }
 
 func (h HealthController) Health(c *gin.Context) {
-	if err := h.adapters.Repositories.PingRepository.CorePing(); err != nil {
-		log.Printf("failed to ping core database: err: %v", err)
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": "core database system unavailable",
-		})
-		return
-	}
-
-	if err := h.adapters.Repositories.PingRepository.RedisPing(); err != nil {
-		log.Printf("failed to ping redis: err: %v", err)
-		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
-			"message": "redis system unavailable",
-		})
-		return
-	}
-
 	c.JSON(http.StatusOK, gin.H{
 		"message": "system running",
 	})

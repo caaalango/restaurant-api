@@ -2,6 +2,9 @@ include .env
 
 DOCKER_COMPOSE = $(shell if docker compose version > /dev/null 2>&1; then echo "docker compose"; else echo "docker-compose"; fi)
 
+setup:
+	make build && make migrate
+
 run:
 	$(DOCKER_COMPOSE) up -d
 

@@ -1,0 +1,21 @@
+#!/bin/bash
+
+set -e
+
+function error {
+  echo "$1"
+  exit 1
+}
+
+echo "Executando o lint com golangci-lint..."
+if ! golangci-lint run; then
+  error "Linting falhou. Corrija os problemas antes de fazer o commit."
+fi
+
+echo "Executando os testes unitários com go test..."
+if ! go test ./...; then
+  error "Testes falharam. Corrija os problemas antes de fazer o commit."
+fi
+
+echo "Linting e testes concluídos com sucesso. Prosseguindo com o commit."
+exit 0
