@@ -1,0 +1,7 @@
+/db
+.env
+
+/docker/*
+!/docker/.gitkeep
+
+logs

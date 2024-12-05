@@ -1,0 +1,99 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: docker_api_core
+    ports:
+      - "8080:8080"
+      - "40000:40000"
+    environment:
+      - DATABASE_HOST=${DB_HOST}
+      - DATABASE_PORT=${DB_PORT}
+      - DATABASE_USER=${DB_USERNAME}
+      - DATABASE_PASSWORD=${DB_PASSWORD}
+      - DATABASE_NAME=${DB_NAME}
+    depends_on:
+      - core-db
+      - opensearch
+      - apache
+      - rabbitmq
+      - redis
+    networks:
+      - app_network
+    volumes:
+      - ./logs:/var/log/app-logs
+
+  core-db:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    container_name: docker_database_api
+    environment:
+      DATABASE_HOST: ${DB_HOST}
+      DATABASE_PORT: ${DB_PORT}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - ./docker/db_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+  opensearch:
+    image: opensearchproject/opensearch:2.4.1
+    container_name: docker_opensearch
+    environment:
+      - discovery.type=single-node
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    volumes:
+      - ./logs:/var/log/app-logs
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./filebeat.yml:/usr/share/filebeat/filebeat.yml
+    networks:
+      - app_network
+
+  apache:
+    image: httpd:2.4
+    container_name: docker_apache
+    ports:
+      - "80:80"
+    volumes:
+      - ./public:/usr/local/apache2/htdocs
+    networks:
+      - app_network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: docker_rabbitmq
+    ports:
+      - "5672:5672"   
+      - "15672:15672" 
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - app_network
+
+  redis:
+    image: redis:latest
+    container_name: docker_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - app_network
+
+volumes:
+  db_data:
+  opensearch_data:
+  apache_conf:
+  apache_html:
+
+networks:
+  app_network:
+    driver: bridge
+    name: curriculum-network

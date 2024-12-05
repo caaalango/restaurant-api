@@ -1,0 +1,6 @@
+package constants
+
+var SIZE_BY_LIST_PAGE = 20
+
+var SIZE_OF_INSERT_MANY_ENTITIES = 50
+var SIZE_OF_UPDATE_MANY_ENTITIES = 20
