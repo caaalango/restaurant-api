@@ -30,22 +30,24 @@ Este projeto, desenvolvido em **Golang**, tem como objetivo automatizar os proce
 ## Arquitetura
 
 - **Padrão Arquitetural**: Hexagonal (Ports and Adapters), promovendo uma separação clara entre o domínio e a infraestrutura.
-- **Monólito em Monorepo (Inicialmente)**: Organização centralizada do código, facilitando o gerenciamento e a manutenção.
+- **Monólito em Monorepo**: Organização centralizada do código, facilitando o gerenciamento e a manutenção.
 
 ## Tecnologias Utilizadas
 
 - **Linguagem de Programação**: Golang
 - **Banco de Dados**: PostgreSQL
 - **Cache**: Redis
-- **Filas de Mensagens**: RabbitMQ e Apache Kafka
-- **Autenticação**: OAuth para login social
+- **Filas de Mensagens**: RabbitMQ
+- **Autenticação**: Login tradicional e OAuth para login social
 - **Comunicação**: APIs RESTful
+- **Documentação**: Geração automática via Swagguer
+- **Testes**: Testes unitários e de integração
+- **Deploy**: Pipeline via GitHub Actions para a AWS
 
 ## Pré-requisitos
 
 Certifique-se de ter as seguintes ferramentas instaladas:
 
-- **Golang** (versão mais recente)
 - **Docker** e **Docker Compose**
 - **Make**
 
