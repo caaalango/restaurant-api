@@ -104,7 +104,7 @@ Este projeto está licenciado sob a licença MIT. Veja o arquivo [LICENSE](LICEN
 
 Para dúvidas ou sugestões:
 
-- **Email**: eliabebastosdias123@gmail.com
+- **Email**: eliabebastosdias01@gmail.com
 - **LinkedIn**: [Eliabe Bastos](https://www.linkedin.com/in/eliabebastos/)
 
 - **Email**: pinheiro.nomegabriel@gmail.com
