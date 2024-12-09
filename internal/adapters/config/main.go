@@ -7,10 +7,8 @@ import (
 )
 
 type Config struct {
-	ServerPort    string
-	Databases     Databases
-	RabbitMQURL   string
-	OpenSearchURL string
+	ServerPort string
+	Databases  Databases
 }
 
 type Databases struct {
@@ -39,8 +37,6 @@ func New() *Config {
 				Password: envs.Get(envs.REDIS_PASSWORD),
 				DB:       envs.GetInt(envs.REDIS_DB)},
 		},
-		RabbitMQURL:   envs.Get(envs.RABBITMQ_URL),
-		OpenSearchURL: envs.Get(envs.OPENSEARCH_URL),
 	}
 }
 

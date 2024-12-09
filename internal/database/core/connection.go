@@ -25,7 +25,7 @@ func ConnectCoreDatabase(dsn string) (*dbr.Connection, error) {
 	conn.SetConnMaxIdleTime(CORE_MAX_TIME_TO_INATIVE_CONN)
 
 	if err := conn.Ping(); err != nil {
-		return nil, fmt.Errorf("unable to ping database: %v", err)
+		panic(fmt.Sprintf("unable to ping database: %v", err))
 	}
 
 	fmt.Println("Postgres connection established.")

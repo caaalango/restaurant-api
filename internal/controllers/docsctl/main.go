@@ -8,15 +8,18 @@ import (
 	"github.com/swaggo/swag/example/basic/docs"
 )
 
-type DocsController struct{}
-
-func (u DocsController) SetUpRoutes(c *gin.Engine) {
-	c.Group("/docs")
-
-	docs.SwaggerInfo.BasePath = "/api"
-	c.GET("/*any", ginSwagger.WrapHandler(files.Handler))
+type DocsController struct {
+	adapters *adapters.Adapters
 }
 
-func New(apt *adapters.Adapters) *DocsController {
-	return &DocsController{}
+func New(adapters *adapters.Adapters) DocsController {
+	return DocsController{adapters: adapters}
+}
+
+func (u DocsController) SetUpRoutes(c *gin.Engine) {
+	group := c.Group("/docs")
+
+	docs.SwaggerInfo.BasePath = "/api"
+
+	group.GET("/*any", ginSwagger.WrapHandler(files.Handler))
 }

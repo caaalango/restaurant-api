@@ -2,11 +2,13 @@ package dbhdl
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 	"strings"
 
 	"github.com/calango-productions/api/internal/constants"
 	"github.com/gocraft/dbr/v2"
+	"github.com/google/uuid"
 )
 
 type CoreHandler[T any] struct {
@@ -25,7 +27,9 @@ func (h *CoreHandler[T]) Insert(record *T) error {
 	}
 	defer tx.RollbackUnlessCommitted()
 
-	_, err = tx.InsertInto(h.table).Columns(getColumns(record)...).Record(record).Exec()
+	_, err = tx.InsertInto(h.table).
+		Columns(getColumns(record)...).
+		Record(record).Exec()
 	if err != nil {
 		return err
 	}
@@ -52,22 +56,29 @@ func (h *CoreHandler[T]) InsertMany(records []T) error {
 	return tx.Commit()
 }
 
-func (h *CoreHandler[T]) List(size int, page int, onlyActives bool, clientToken string) ([]T, error) {
+func (h *CoreHandler[T]) List(HasPagination bool, size int, page int, onlyActives bool, filterToken uuid.UUID, filterField string) ([]T, error) {
 	var results []T
+	var query *dbr.SelectStmt
 
-	offset := (page - 1) * size
+	if HasPagination {
+		offset := (page - 1) * size
 
-	query := h.session.Select("*").
-		From(h.table).
-		Limit(uint64(size)).
-		Offset(uint64(offset))
-
+		query = h.session.Select("*").
+			From(h.table).
+			Limit(uint64(size)).
+			Offset(uint64(offset))
+	} else {
+		query = h.session.Select("*").
+			From(h.table)
+	}
 	if onlyActives {
-		query = query.Where("active = ?", true)
+		query = query.Where("active = true")
 	}
-	if clientToken != "" {
-		query = query.Where("client_token = ?", clientToken)
+	if filterToken != uuid.Nil {
+		query = query.Where(fmt.Sprintf("%s = %s", filterField, filterToken))
 	}
+
+	logQuery(query)
 
 	_, err := query.Load(&results)
 	if err != nil {
@@ -113,13 +124,21 @@ func (h *CoreHandler[T]) Search(search string, fields []string, size int, page i
 
 func (h *CoreHandler[T]) Get(field string, value interface{}) (*T, error) {
 	var result T
-	_, err := h.session.Select("*").
+
+	query := h.session.Select("*").
 		From(h.table).
-		Where(fmt.Sprintf("%s = ?", field), value).
-		Load(&result)
+		Where(fmt.Sprintf("%s = '%s'", field, value)).
+		Limit(1)
+
+	buf := dbr.NewBuffer()
+	_ = query.Build(query.Dialect, buf)
+	log.Println(buf.String())
+
+	_, err := query.Load(&result)
 	if err != nil {
 		return nil, err
 	}
+
 	return &result, nil
 }
 
@@ -200,4 +219,10 @@ func splitIntoChunks[T any](records []T, chunkSize int) [][]T {
 		chunks = append(chunks, records[i:end])
 	}
 	return chunks
+}
+
+func logQuery(query *dbr.SelectStmt) {
+	buf := dbr.NewBuffer()
+	_ = query.Build(query.Dialect, buf)
+	log.Println(buf.String())
 }

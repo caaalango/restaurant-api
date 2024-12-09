@@ -10,15 +10,11 @@ import (
 	coreconn "github.com/calango-productions/api/internal/database/core"
 	"github.com/go-redis/redis/v8"
 	"github.com/gocraft/dbr/v2"
-	"github.com/opensearch-project/opensearch-go"
-	"github.com/streadway/amqp"
 )
 
 type Connections struct {
-	Databases  DatabasesConn
-	OpenSearch *opensearch.Client
-	RabbitMQ   *amqp.Connection
-	Closers    []io.Closer
+	Databases DatabasesConn
+	Closers   []io.Closer
 }
 
 type DatabasesConn struct {
@@ -31,14 +27,13 @@ func New() *Connections {
 }
 
 func (c *Connections) ConnectCoreDatabase(conf *config.Config) {
-	session, err := coreconn.ConnectCoreDatabase(conf.Databases.Core.DSN)
-	fmt.Println(conf.Databases.Core.DSN)
+	conn, err := coreconn.ConnectCoreDatabase(conf.Databases.Core.DSN)
 	if err != nil {
 		errMessage := fmt.Sprintf("Unable to establish connection with core database: %v", err)
 		panic(errMessage)
 	}
-	c.Databases.Core = session
-	c.Closers = append(c.Closers, session)
+	c.Databases.Core = conn
+	c.Closers = append(c.Closers, conn)
 }
 
 func (c *Connections) ConnectRedis(conf *config.Config) {
@@ -57,28 +52,6 @@ func (c *Connections) ConnectRedis(conf *config.Config) {
 
 	c.Databases.Redis = rdb
 	c.Closers = append(c.Closers, rdb)
-}
-
-func (c *Connections) ConnectRabbitMQ(conf *config.Config) {
-	rabbitConn, err := amqp.Dial(conf.RabbitMQURL)
-	if err != nil {
-		errMessage := fmt.Sprintf("Unable to establish connection with rabbit MQ: %v", err)
-		panic(errMessage)
-	}
-	c.RabbitMQ = rabbitConn
-	c.Closers = append(c.Closers, rabbitConn)
-}
-
-func (c *Connections) ConnectOpenSearch(conf *config.Config) {
-	opensearchClient, err := opensearch.NewClient(opensearch.Config{
-		Addresses: []string{conf.OpenSearchURL},
-	})
-	if err != nil {
-		errMessage := fmt.Sprintf("Unable to establish connection with OpenSearch: %v", err)
-		panic(errMessage)
-	}
-	c.OpenSearch = opensearchClient
-	c.Closers = append(c.Closers, DefaulCloser)
 }
 
 func (c *Connections) Shutdown(ctx context.Context) {

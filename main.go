@@ -12,9 +12,9 @@ import (
 	"github.com/calango-productions/api/internal/adapters"
 	"github.com/calango-productions/api/internal/adapters/config"
 	"github.com/calango-productions/api/internal/adapters/connections"
-	"github.com/calango-productions/api/internal/controllers/dishctl"
 	"github.com/calango-productions/api/internal/controllers/docsctl"
 	"github.com/calango-productions/api/internal/controllers/healthy"
+	"github.com/calango-productions/api/internal/controllers/menuctl"
 	"github.com/calango-productions/api/internal/controllers/userctl"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -26,15 +26,15 @@ func main() {
 
 	conn := connections.New()
 	conn.ConnectCoreDatabase(conf)
-	conn.ConnectOpenSearch(conf)
-	conn.ConnectRabbitMQ(conf)
 	conn.ConnectRedis(conf)
 
 	apt := adapters.New(conn)
 	app := server.New(apt, conf)
 
 	store := cookie.NewStore([]byte("secret"))
-	app.Router.Use(sessions.Sessions("mysession", store))
+	app.Router.Use(sessions.Sessions("session", store))
+
+	app.Router.LoadHTMLGlob("web/*.html")
 
 	app.Router.Use(apt.Middlewares.CorsMiddleware.Execute())
 	app.Router.Use(gin.Logger())
@@ -44,17 +44,15 @@ func main() {
 		docsctl.New(apt),
 		healthy.New(apt),
 		userctl.New(apt),
-		dishctl.New(apt),
+		menuctl.New(apt),
 	)
 
 	stopCh := setupSignalHandler()
 
-	go func() {
-		if err := app.Run(); err != nil {
-			fmt.Printf("Application run error: %v\n", err)
-			stopCh <- syscall.SIGTERM
-		}
-	}()
+	if err := app.Run(); err != nil {
+		fmt.Printf("Application run error: %v\n", err)
+		stopCh <- syscall.SIGTERM
+	}
 
 	<-stopCh
 

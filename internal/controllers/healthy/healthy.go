@@ -20,7 +20,6 @@ func (h HealthController) SetUpRoutes(c *gin.Engine) {
 	c.GET("/health", h.Health)
 	c.GET("/checks/coredb", h.Health)
 	c.GET("/checks/redis", h.Health)
-	c.GET("/checks/rabbitmq", h.Health)
 }
 
 func (h HealthController) Health(c *gin.Context) {
@@ -54,13 +53,5 @@ func (h HealthController) CheckRedis(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "database running",
-	})
-}
-
-func (h HealthController) CheckRabbitMQ(c *gin.Context) {
-	// implementar
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": "rabbitMQ running",
 	})
 }

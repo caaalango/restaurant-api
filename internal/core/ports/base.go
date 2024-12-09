@@ -1,5 +1,7 @@
 package ports
 
+import "github.com/google/uuid"
+
 type CreateConf[T any] struct {
 	Item T
 }
@@ -20,10 +22,12 @@ type GetByKeyConf struct {
 }
 
 type ListConf struct {
-	OnlyActives bool
-	Page        int
-	Size        int
-	ClientToken string
+	HasPagination bool
+	OnlyActives   bool
+	Page          int
+	Size          int
+	FilterToken   uuid.UUID
+	FilterField   string
 }
 
 type UpdateConf struct {

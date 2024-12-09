@@ -12,9 +12,9 @@ type UserController struct {
 }
 
 func (u UserController) SetUpRoutes(c *gin.Engine) {
-	c.Group("/users")
+	group := c.Group("/users")
 
-	c.POST("/", u.CreateTradionalAction)
+	group.POST("/", u.CreateTradionalAction)
 }
 
 func New(apt *adapters.Adapters) *UserController {

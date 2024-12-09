@@ -2,30 +2,38 @@ package baserepo
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/calango-productions/api/internal/core/ports"
+	"github.com/calango-productions/api/internal/repositories/baserepo/dblogger"
 	dbhdl "github.com/calango-productions/api/internal/repositories/baserepo/handlers"
 	"github.com/gocraft/dbr/v2"
 )
 
 type BaseRepository[T any] struct {
-	conn  *dbr.Connection
-	table string
+	session *dbr.Session
+	table   string
 }
 
+var (
+	session *dbr.Session
+	once    sync.Once
+)
+
 func New[T any](conn *dbr.Connection, table string) *BaseRepository[T] {
+	once.Do(func() {
+		session = conn.NewSession(&dblogger.LoggingEventReceiver{})
+	})
+
 	return &BaseRepository[T]{
-		conn:  conn,
-		table: table,
+		session: session,
+		table:   table,
 	}
 }
 
 func (r *BaseRepository[T]) Create(conf ports.CreateConf[T]) (*T, error) {
-	session := r.conn.NewSession(nil)
-	defer session.Close()
-
-	err := dbhdl.New[T](session, r.table).Insert(&conf.Item)
+	err := dbhdl.New[T](r.session, r.table).Insert(&conf.Item)
 	if err != nil {
 		return nil, err
 	}
@@ -33,10 +41,7 @@ func (r *BaseRepository[T]) Create(conf ports.CreateConf[T]) (*T, error) {
 }
 
 func (r *BaseRepository[T]) CreateMany(conf ports.CreateManyConf[T]) error {
-	session := r.conn.NewSession(nil)
-	defer session.Close()
-
-	err := dbhdl.New[T](session, r.table).InsertMany(conf.Items)
+	err := dbhdl.New[T](r.session, r.table).InsertMany(conf.Items)
 	if err != nil {
 		return err
 	}
@@ -44,10 +49,7 @@ func (r *BaseRepository[T]) CreateMany(conf ports.CreateManyConf[T]) error {
 }
 
 func (r *BaseRepository[T]) Exists(conf ports.ExistConf) (bool, error) {
-	session := r.conn.NewSession(nil)
-	defer session.Close()
-
-	result, err := dbhdl.New[T](session, r.table).Get(conf.Key, conf.Value)
+	result, err := dbhdl.New[T](r.session, r.table).Get(conf.Key, conf.Value)
 	if err != nil {
 		return false, err
 	}
@@ -58,40 +60,39 @@ func (r *BaseRepository[T]) Exists(conf ports.ExistConf) (bool, error) {
 }
 
 func (r *BaseRepository[T]) Get(conf ports.GetConf) (*T, error) {
-	session := r.conn.NewSession(nil)
-	defer session.Close()
-
-	var application T
-	result, err := dbhdl.New[T](session, r.table).Get("Token", conf.Token)
+	var entity T
+	result, err := dbhdl.New[T](r.session, r.table).Get("Token", conf.Token)
 	if err != nil {
 		return nil, err
 	}
 	if result == nil {
-		return nil, fmt.Errorf("application not found")
+		return nil, fmt.Errorf("entity not found")
 	}
-	return &application, nil
+	return &entity, nil
 }
 
 func (r *BaseRepository[T]) GetByKey(conf ports.GetByKeyConf) (*T, error) {
-	session := r.conn.NewSession(nil)
-	defer session.Close()
-
-	var application T
-	result, err := dbhdl.New[T](session, r.table).Get(conf.Key, conf.Value)
+	var entity T
+	result, err := dbhdl.New[T](r.session, r.table).Get(conf.Key, conf.Value)
 	if err != nil {
 		return nil, err
 	}
 	if result == nil {
-		return nil, fmt.Errorf("application not found")
+		return nil, fmt.Errorf("entity not found")
 	}
-	return &application, nil
+	return &entity, nil
 }
 
 func (r *BaseRepository[T]) List(conf ports.ListConf) ([]T, error) {
-	session := r.conn.NewSession(nil)
-	defer session.Close()
 
-	result, err := dbhdl.New[T](session, r.table).List(conf.Size, conf.Page, conf.OnlyActives, conf.ClientToken)
+	result, err := dbhdl.New[T](r.session, r.table).List(
+		conf.HasPagination,
+		conf.Size,
+		conf.Page,
+		conf.OnlyActives,
+		conf.FilterToken,
+		conf.FilterField,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -99,10 +100,7 @@ func (r *BaseRepository[T]) List(conf ports.ListConf) ([]T, error) {
 }
 
 func (r *BaseRepository[T]) Search(conf ports.SearchConf) ([]T, error) {
-	session := r.conn.NewSession(nil)
-	defer session.Close()
-
-	result, err := dbhdl.New[T](session, r.table).Search(conf.Search, conf.Fields, conf.Size, conf.Page, conf.OnlyActives)
+	result, err := dbhdl.New[T](r.session, r.table).Search(conf.Search, conf.Fields, conf.Size, conf.Page, conf.OnlyActives)
 	if err != nil {
 		return nil, err
 	}
@@ -110,10 +108,7 @@ func (r *BaseRepository[T]) Search(conf ports.SearchConf) ([]T, error) {
 }
 
 func (r *BaseRepository[T]) Update(conf ports.UpdateConf) error {
-	session := r.conn.NewSession(nil)
-	defer session.Close()
-
-	err := dbhdl.New[T](session, r.table).Update("token", conf.Token, conf.Updates)
+	err := dbhdl.New[T](r.session, r.table).Update("token", conf.Token, conf.Updates)
 	if err != nil {
 		return err
 	}
@@ -121,16 +116,13 @@ func (r *BaseRepository[T]) Update(conf ports.UpdateConf) error {
 }
 
 func (r *BaseRepository[T]) Inactivate(conf ports.InactivateConf) error {
-	session := r.conn.NewSession(nil)
-	defer session.Close()
-
 	updates := map[string]interface{}{
 		"active":     false,
 		"updated_at": time.Now(),
 	}
-	err := dbhdl.New[T](session, r.table).Update("token", conf.Token, updates)
+	err := dbhdl.New[T](r.session, r.table).Update("token", conf.Token, updates)
 	if err != nil {
-		return fmt.Errorf("failed to inactivate application: %v", err)
+		return fmt.Errorf("failed to inactivate entity: %v", err)
 	}
 	return nil
 }
