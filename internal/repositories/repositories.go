@@ -7,7 +7,6 @@ import (
 	credentialrepo "github.com/calango-productions/api/internal/repositories/credential"
 	"github.com/calango-productions/api/internal/repositories/dishrepo"
 	"github.com/calango-productions/api/internal/repositories/pingrepo"
-	"github.com/calango-productions/api/internal/repositories/redisrepo"
 	"github.com/calango-productions/api/internal/repositories/restaurantrepo"
 	"github.com/calango-productions/api/internal/repositories/userrepo"
 )
@@ -46,7 +45,7 @@ func New(conn *connections.Connections) *Provider {
 		PingRepository:       pingrepo.New(conn),
 		CredentialRepository: credentialrepo.New(conn.Databases.Core),
 		DishRepository:       dishrepo.New(conn.Databases.Core),
-		RedisRepository:      redisrepo.New(conn.Databases.Redis),
+		// RedisRepository:      redisrepo.New(conn.Databases.Redis),
 		CommentRepository:    commentrepo.New(conn.Databases.Core),
 		RestaurantRepository: restaurantrepo.New(conn.Databases.Core),
 	}

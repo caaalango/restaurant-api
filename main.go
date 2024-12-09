@@ -26,7 +26,7 @@ func main() {
 
 	conn := connections.New()
 	conn.ConnectCoreDatabase(conf)
-	conn.ConnectRedis(conf)
+	// conn.ConnectRedis(conf)
 
 	apt := adapters.New(conn)
 	app := server.New(apt, conf)

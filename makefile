@@ -23,6 +23,9 @@ log:
 stats:
 	docker stats
 
+ps:
+	docker ps -a
+
 kill-all:
 	docker kill $$(docker ps -aq)
 

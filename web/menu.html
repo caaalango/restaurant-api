@@ -1,10 +1,12 @@
+<!-- templates/index.html -->
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Cardápio {{.Title}}</title>
+    <title>Cardápio</title>
     <style>
+        /* Seu CSS aqui */
         body { font-family: Arial, sans-serif; margin: 20px; }
         .category { margin-bottom: 3em; }
         .category h2 { border-bottom: 1px solid #ccc; padding-bottom: 5px; }
@@ -17,31 +19,11 @@
     </style>
 </head>
 <body>
-    <h1>Cardápio: {{.Title}}</h1>
-    <h2>{{.Slogo}}</h2>
-    {{range .Categories}}
-    <div class="category">
-        <h2>{{.Category}}</h2>
-        <ul>
-            {{range .Dishes}}
-            <li class="item" 
-                data-name="{{.Dish.Name}}" 
-                data-description="{{.Dish.Description}}" 
-                data-full-description="{{.Dish.FullDescription}}" 
-                data-image-url="{{.Dish.ImageURL}}"
-                data-comments-json='{{.Comments}}'
-                data-rating-dist-json='{{.Dish.RatingDistJSON}}'>
-                <img src="{{.Dish.ImageURL}}" alt="{{.Dish.Name}}">
-                <div class="item-content">
-                    <span class="item-name">{{.Dish.Name}}</span>
-                    <span class="item-price">R$ {{printf "%.2f" .Dish.Price}}</span>
-                    <span class="item-desc">{{.Dish.Description}}</span>
-                </div>
-            </li>
-            {{end}}
-        </ul>
+    <h1>Cardápio</h1>
+    <h2 id="slogo"></h2>
+    <div id="categories-container">
+        <!-- As categorias serão carregadas aqui via JavaScript -->
     </div>
-    {{end}}
     <div class="modal-overlay">
         <div class="modal-content">
             <button class="modal-close">&times;</button>
@@ -59,6 +41,7 @@
         </div>
     </div>
     <script>
+        const apiURL = "localhost:8080/menu/gourmet" // Será substituído pelo Go
         const overlay = document.querySelector('.modal-overlay');
         const modalTitle = document.querySelector('.modal-title');
         const modalFullDescription = document.querySelector('.modal-full-description');
@@ -67,57 +50,135 @@
         const modalRatingDistBox = document.querySelector('.modal-rating-dist .rating-dist-list');
         const closeModalBtn = document.querySelector('.modal-close');
 
-        document.querySelectorAll('.item').forEach(item => {
-            item.addEventListener('click', () => {
-                const name = item.getAttribute('data-name');
-                const fullDescription = item.getAttribute('data-full-description') || item.getAttribute('data-description');
-                const imageUrl = item.getAttribute('data-image-url');
-                const commentsJSON = item.getAttribute('data-comments-json');
-                const ratingDistJSON = item.getAttribute('data-rating-dist-json');
+        // Função para carregar os dados do menu
+        async function loadMenu() {
+            try {
+                const response = await fetch(apiURL);
+                const result = await response.json();
 
-                modalTitle.textContent = name;
-                modalFullDescription.textContent = fullDescription;
-                modalImage.src = imageUrl;
+                if (result.success) {
+                    document.getElementById('slogo').textContent = result.data.slogo;
+                    const categoriesContainer = document.getElementById('categories-container');
 
-                const ratingDist = JSON.parse(ratingDistJSON);
-                modalRatingDistBox.innerHTML = '';
-                Object.keys(ratingDist).forEach(key => {
-                    const stars = '★'.repeat(parseInt(key)) + '☆'.repeat(5 - parseInt(key));
-                    const li = document.createElement('li');
-                    li.textContent = `${stars}: ${ratingDist[key]} votos`;
-                    modalRatingDistBox.appendChild(li);
+                    result.data.categories.forEach(category => {
+                        const categoryDiv = document.createElement('div');
+                        categoryDiv.classList.add('category');
+
+                        const categoryTitle = document.createElement('h2');
+                        categoryTitle.textContent = category.category;
+                        categoryDiv.appendChild(categoryTitle);
+
+                        const ul = document.createElement('ul');
+
+                        category.dishes.forEach(dish => {
+                            const li = document.createElement('li');
+                            li.classList.add('item');
+                            li.dataset.name = dish.dish.name;
+                            li.dataset.description = dish.dish.description;
+                            li.dataset.fullDescription = dish.dish.full_description || dish.dish.description;
+                            li.dataset.imageUrl = dish.dish.image_url;
+                            li.dataset.commentsJson = JSON.stringify(dish.comments.map(c => c.comment));
+                            li.dataset.ratingDistJson = dish.dish.rating_dist_json;
+
+                            const img = document.createElement('img');
+                            img.src = dish.dish.image_url;
+                            img.alt = dish.dish.name;
+                            li.appendChild(img);
+
+                            const itemContent = document.createElement('div');
+                            itemContent.classList.add('item-content');
+
+                            const itemName = document.createElement('span');
+                            itemName.classList.add('item-name');
+                            itemName.textContent = dish.dish.name;
+                            itemContent.appendChild(itemName);
+
+                            const itemPrice = document.createElement('span');
+                            itemPrice.classList.add('item-price');
+                            itemPrice.textContent = `R$ ${dish.dish.price.toFixed(2)}`;
+                            itemContent.appendChild(itemPrice);
+
+                            const itemDesc = document.createElement('span');
+                            itemDesc.classList.add('item-desc');
+                            itemDesc.textContent = dish.dish.description;
+                            itemContent.appendChild(itemDesc);
+
+                            li.appendChild(itemContent);
+                            ul.appendChild(li);
+                        });
+
+                        categoryDiv.appendChild(ul);
+                        categoriesContainer.appendChild(categoryDiv);
+                    });
+
+                    // Adicionar listeners após carregar os itens
+                    addItemListeners();
+                } else {
+                    console.error("Falha ao carregar os dados do menu.");
+                }
+            } catch (error) {
+                console.error("Erro ao buscar os dados do menu:", error);
+            }
+        }
+
+        // Função para adicionar listeners aos itens
+        function addItemListeners() {
+            document.querySelectorAll('.item').forEach(item => {
+                item.addEventListener('click', () => {
+                    const name = item.dataset.name;
+                    const fullDescription = item.dataset.fullDescription;
+                    const imageUrl = item.dataset.imageUrl;
+                    const commentsJSON = item.dataset.commentsJson;
+                    const ratingDistJSON = item.dataset.ratingDistJson;
+
+                    modalTitle.textContent = name;
+                    modalFullDescription.textContent = fullDescription;
+                    modalImage.src = imageUrl;
+
+                    const ratingDist = JSON.parse(ratingDistJSON);
+                    modalRatingDistBox.innerHTML = '';
+                    for (const [key, value] of Object.entries(ratingDist)) {
+                        const stars = '★'.repeat(parseInt(key)) + '☆'.repeat(5 - parseInt(key));
+                        const li = document.createElement('li');
+                        li.textContent = `${stars}: ${value} votos`;
+                        modalRatingDistBox.appendChild(li);
+                    }
+
+                    const comments = JSON.parse(commentsJSON);
+                    modalCommentsBox.innerHTML = '';
+                    comments.forEach(comment => {
+                        const li = document.createElement('li');
+                        li.classList.add('comment-container');
+
+                        const userName = document.createElement('div');
+                        userName.classList.add('comment-user');
+                        userName.textContent = comment.user;
+
+                        const ratingEl = document.createElement('div');
+                        ratingEl.classList.add('comment-rating');
+                        ratingEl.textContent = '★'.repeat(comment.rating) + '☆'.repeat(5 - comment.rating);
+
+                        const textEl = document.createElement('div');
+                        textEl.classList.add('comment-text');
+                        textEl.textContent = comment.text;
+
+                        li.appendChild(userName);
+                        li.appendChild(ratingEl);
+                        li.appendChild(textEl);
+                        modalCommentsBox.appendChild(li);
+                    });
+
+                    overlay.style.display = 'flex';
                 });
-
-                const comments = JSON.parse(commentsJSON);
-                modalCommentsBox.innerHTML = '';
-                comments.forEach(comment => {
-                    const li = document.createElement('li');
-                    li.classList.add('comment-container');
-
-                    const userName = document.createElement('div');
-                    userName.classList.add('comment-user');
-                    userName.textContent = comment.User;
-
-                    const ratingEl = document.createElement('div');
-                    ratingEl.classList.add('comment-rating');
-                    ratingEl.textContent = '★'.repeat(comment.Rating) + '☆'.repeat(5 - comment.Rating);
-
-                    const textEl = document.createElement('div');
-                    textEl.classList.add('comment-text');
-                    textEl.textContent = comment.Text;
-
-                    li.appendChild(userName);
-                    li.appendChild(ratingEl);
-                    li.appendChild(textEl);
-                    modalCommentsBox.appendChild(li);
-                });
-
-                overlay.style.display = 'flex';
             });
-        });
+        }
 
+        // Fechar modal
         closeModalBtn.addEventListener('click', () => overlay.style.display = 'none');
         overlay.addEventListener('click', e => { if (e.target === overlay) overlay.style.display = 'none'; });
+
+        // Carregar o menu ao carregar a página
+        window.onload = loadMenu;
     </script>
 </body>
 </html>

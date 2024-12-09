@@ -3,7 +3,7 @@ BEGIN;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE users (
-    token UUID PRIMARY KEY,            
+    token UUID PRIMARY KEY uuid_generate_v4(),            
     email VARCHAR(255) NOT NULL UNIQUE, 
     icon VARCHAR(50) NOT NULL CHECK (icon IN ('CHICKEN', 'BEEF', 'PORK', 'FISH', 'SHRIMP', 'LAMB', 'DUCK', 'CRAB', 'SQUID', 'GOAT')),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -13,7 +13,7 @@ CREATE TABLE users (
 );
 
 CREATE TABLE restaurants (
-    token UUID PRIMARY KEY,
+    token UUID PRIMARY KEY uuid_generate_v4(),
     name VARCHAR(255) NOT NULL,
     slogo TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -22,7 +22,7 @@ CREATE TABLE restaurants (
 );
 
 CREATE TABLE dishes (
-    token UUID PRIMARY KEY,
+    token UUID PRIMARY KEY uuid_generate_v4(),
     restaurant_token UUID NOT NULL, 
     category VARCHAR(50) NOT NULL CHECK (category IN ('APPETIZERS', 'MAIN_COURSES', 'SIDE_DISHES', 'DESSERTS', 'BEVERAGES', 'SNACKS', 'VEGETARIAN', 'VEGAN', 'GLUTEN_FREE', 'LOW_CARB', 'BREAKFAST')),
     title VARCHAR(255) NOT NULL,
@@ -39,7 +39,7 @@ CREATE TABLE dishes (
 );
 
 CREATE TABLE comments (
-    token UUID PRIMARY KEY,    
+    token UUID PRIMARY KEY uuid_generate_v4(),    
     restaurant_token UUID NOT NULL, 
     dish_token UUID NOT NULL,           
     user_token UUID NOT NULL,          

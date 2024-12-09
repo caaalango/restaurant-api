@@ -5,7 +5,7 @@ WORKDIR /app
 COPY . .
 
 RUN CGO_ENABLED=0 go install github.com/cosmtrek/air@v1.49.0
-# RUN CGO_ENABLED=0 go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.16.2
+RUN CGO_ENABLED=0 go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.16.2
 
 COPY go.mod go.sum ./
 COPY air.toml ./
