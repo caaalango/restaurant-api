@@ -65,14 +65,20 @@ Certifique-se de ter as seguintes ferramentas instaladas:
    Na primeira vez, execute:
 
    ```bash
-   make setup
+   make build
    ```
 
-   Este comando irá:
+   Depois de construido os containers, verifique se a aplicação já está funcionando executando:
 
-   - Construir as imagens Docker necessárias.
-   - Configurar o banco de dados PostgreSQL.
-   - Iniciar os serviços de cache e filas de mensagens.
+   ```bash
+   curl http://localhost:8080/health
+   ```
+
+   Depois que este endpoint tiver funcionando, execute os migrations, executando:
+
+   ```bash
+   make migrate
+   ```
 
 ## Como Usar
 
